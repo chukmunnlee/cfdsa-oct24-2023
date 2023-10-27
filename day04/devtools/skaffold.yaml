@@ -1,0 +1,31 @@
+apiVersion: skaffold/v4beta7 
+kind: Config
+metadata:
+  name: dov-skaffold
+
+build:
+  artifacts:
+  - image: chukmunnlee/sk-dov-bear
+    context: .
+    docker:
+      dockerfile: Dockerfile
+
+manifests:
+  kustomize:
+    paths:
+    - ./manifests/overlays/dev
+
+deploy:
+  kubectl:
+    flags:
+      delete:
+      - --force
+      - --grace-period=0
+
+portForward:
+- resourceType: Service
+  resourceName: dev-dov-svc
+  namespace: devns
+  port: 8080
+  localPort: 8080
+

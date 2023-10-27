@@ -38,6 +38,8 @@ const port = opt['port'] || opt['p'] || parseInt(process.env.PORT) || 3000
 const instanceName = opt['name'] || opt['n'] || process.env.INSTANCE_NAME || ''
 const instanceHash = opt['hash'] || process.env.INSTANCE_HASH || '' 
 
+console.info('hello, world')
+
 const app = express()
 
 app.engine('hbs', create({ defaultLayout: 'main.hbs' }).engine)

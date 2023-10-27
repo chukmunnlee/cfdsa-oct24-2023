@@ -1,0 +1,149 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  data:
+    INSTANCE_NAME: dGhpcyBpcyBmcm9tIGt1c3RvbWl6ZQ==
+  kind: Secret
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","data":{"INSTANCE_NAME":"dGhpcyBpcyBmcm9tIGt1c3RvbWl6ZQ=="},"kind":"Secret","metadata":{"annotations":{},"labels":{"dept":"eng","env":"dev"},"name":"chuk-dov-secret-test-f77bd42c9h","namespace":"devns"},"type":"Opaque"}
+    labels:
+      dept: eng
+      env: dev
+    name: chuk-dov-secret-test-f77bd42c9h
+    namespace: devns
+  type: Opaque
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"dov","dept":"eng","env":"dev"},"name":"chuk-dov-svc-test","namespace":"devns"},"spec":{"ports":[{"port":8080,"targetPort":"dov-port"}],"selector":{"app":"dov","dept":"eng","env":"dev"},"type":"ClusterIP"}}
+    labels:
+      app: dov
+      dept: eng
+      env: dev
+    name: chuk-dov-svc-test
+    namespace: devns
+  spec:
+    ports:
+    - port: 8080
+      targetPort: dov-port
+    selector:
+      app: dov
+      dept: eng
+      env: dev
+    type: ClusterIP
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"dov","dept":"eng","env":"dev"},"name":"chuk-dov-deploy-test","namespace":"devns"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"dov","dept":"eng","env":"dev"}},"template":{"metadata":{"labels":{"app":"dov","dept":"eng","env":"dev"},"name":"dov-po"},"spec":{"containers":[{"env":[{"name":"INSTANCE_HASH","valueFrom":{"fieldRef":{"fieldPath":"status.podIP"}}}],"envFrom":[{"secretRef":{"name":"chuk-dov-secret-test-f77bd42c9h"}}],"image":"chukmunnlee/dov-bear:v6-alpha","imagePullPolicy":"IfNotPresent","livenessProbe":{"failureThreshold":3,"httpGet":{"path":"/healthz","port":3000},"periodSeconds":30,"timeoutSeconds":3},"name":"dov-container","ports":[{"containerPort":3000,"name":"dov-port"}],"resources":{"limits":{"cpu":"100m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}}]}}}}
+    labels:
+      app: dov
+      dept: eng
+      env: dev
+    name: chuk-dov-deploy-test
+    namespace: devns
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: dov
+        dept: eng
+        env: dev
+    template:
+      metadata:
+        labels:
+          app: dov
+          dept: eng
+          env: dev
+        name: dov-po
+      spec:
+        containers:
+        - env:
+          - name: INSTANCE_HASH
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          envFrom:
+          - secretRef:
+              name: chuk-dov-secret-test-f77bd42c9h
+          image: chukmunnlee/dov-bear:v6-alpha
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 3000
+            periodSeconds: 30
+            timeoutSeconds: 3
+          name: dov-container
+          ports:
+          - containerPort: 3000
+            name: dov-port
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+- apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"autoscaling/v2","kind":"HorizontalPodAutoscaler","metadata":{"annotations":{},"labels":{"app":"dov","dept":"eng","env":"dev","name":"dov-hpa"},"name":"chuk-dov-hpa-test","namespace":"devns"},"spec":{"maxReplicas":6,"metrics":[{"resource":{"name":"memory","target":{"averageUtilization":30,"type":"Utilization"}},"type":"Resource"}],"minReplicas":1,"scaleTargetRef":{"apiVersion":"apps/v1","kind":"Deployment","name":"chuk-dov-deploy-test"}}}
+    labels:
+      app: dov
+      dept: eng
+      env: dev
+      name: dov-hpa
+    name: chuk-dov-hpa-test
+    namespace: devns
+  spec:
+    maxReplicas: 6
+    metrics:
+    - resource:
+        name: memory
+        target:
+          averageUtilization: 30
+          type: Utilization
+      type: Resource
+    minReplicas: 1
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: chuk-dov-deploy-test
+- apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"networking.k8s.io/v1","kind":"Ingress","metadata":{"annotations":{"nginx.ingress.kubernetes.io/limit-rps":"5"},"labels":{"app":"dov","dept":"eng","env":"dev","name":"dov-ing"},"name":"chuk-dov-ing-test","namespace":"devns"},"spec":{"ingressClassName":"nginx","rules":[{"host":"abc-123.nip.io","http":{"paths":[{"backend":{"service":{"name":"chuk-dov-svc-test","port":{"number":8080}}},"path":"/","pathType":"Prefix"}]}}]}}
+      nginx.ingress.kubernetes.io/limit-rps: "5"
+    labels:
+      app: dov
+      dept: eng
+      env: dev
+      name: dov-ing
+    name: chuk-dov-ing-test
+    namespace: devns
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: abc-123.nip.io
+      http:
+        paths:
+        - backend:
+            service:
+              name: chuk-dov-svc-test
+              port:
+                number: 8080
+          path: /
+          pathType: Prefix
+kind: List
+metadata: {}

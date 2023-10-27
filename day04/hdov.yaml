@@ -1,39 +1,44 @@
 ---
-apiVersion: v1 
-kind: Secret 
+apiVersion: v1
+kind: Service
 metadata:
-  name: dov-secret 
-  namespace: myns 
+  name: dov-hsvc
+  namespace: dovns
   labels:
-    app: dov 
-type: Opaque 
-data:
-  INSTANCE_NAME: dGhpcyBpcyBhIGJhc2U2NCBlbmNvZGVkIHN0cmluZw==
-  DB_PASSWORD: Y2hhbmdlaXQ=
+    app: dov
+spec:
+  clusterIP: None
+  selector: 
+    app: sdov
+    dept: seng
+  ports:
+  - port: 8080
+    targetPort: sdov-port
 
 ---
 apiVersion: apps/v1 
-kind: Deployment 
+kind: StatefulSet 
 metadata:
-  name: dov-deploy
-  namespace: myns
+  name: dov-sts
+  namespace: dovns
   labels:
     app: dov 
 spec:
-  replicas: 3
+  replicas: 5
   selector:
     matchLabels:
-      app: dov
-      dept: eng
+      app: sdov
+      dept: seng
+  serviceName: dov-hsvc
   template:
     metadata:
-      name: dov-po
+      name: dov-spo
       labels:
-        app: dov
-        dept: eng
+        app: sdov
+        dept: seng
     spec: 
       containers:
-      - name: dov-container 
+      - name: dov-scontainer 
         image: chukmunnlee/dov-bear:v5 
         imagePullPolicy: IfNotPresent
         env: 
@@ -44,8 +49,15 @@ spec:
         envFrom:
         - secretRef:
             name: dov-secret
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
         ports:
-        - name: dov-port 
+        - name: sdov-port 
           containerPort: 3000
         livenessProbe:
           httpGet:
@@ -54,20 +66,3 @@ spec:
           periodSeconds: 30
           timeoutSeconds: 3
           failureThreshold: 3
-
----
-apiVersion: v1 
-kind: Service 
-metadata:
-  name: dov-svc 
-  namespace: myns 
-  labels: 
-    app: dov 
-spec: 
-  type: ClusterIP 
-  selector: 
-    app: dov
-    dept: eng
-  ports:
-  - port: 8080
-    targetPort: dov-port
